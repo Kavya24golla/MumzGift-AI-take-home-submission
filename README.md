@@ -66,7 +66,7 @@ python evals/run_evals.py
 ```
 
 ## Example Inputs
-- `Gift for a 6-month-old baby under 200 AED`
+- `Thoughtful toy gift for a 6-month-old under 200 AED`
 - `أريد هدية لطفل عمره ٦ أشهر بحدود ٢٠٠ درهم`
 - `Useful feeding gift for a 9-month-old under 150 AED`
 - `Gift for newborn under 5 AED`
@@ -78,37 +78,50 @@ python evals/run_evals.py
   "status": "success",
   "query_understanding": {
     "language": "en",
-    "recipient": "infant",
+    "recipient": "newborn_baby",
     "age_months": 6,
     "budget_aed": 200.0,
     "occasion": "gift",
-    "preferences": []
+    "preferences": ["toys", "thoughtful"],
+    "assumptions": [],
+    "missing_fields": []
   },
   "recommendations": [
     {
       "main_product": {
-        "product_id": "P027",
-        "name_en": "Feeding Gift Hamper Mini",
-        "name_ar": "سلة إطعام صغيرة",
-        "category": "feeding",
-        "price_aed": 145.0,
-        "age_min_months": 6,
+        "product_id": "P001",
+        "name_en": "Soft Sensory Baby Toy",
+        "name_ar": "لعبة حسية ناعمة",
+        "category": "toys",
+        "price_aed": 89.0,
+        "age_min_months": 3,
         "age_max_months": 12,
-        "tags": ["feeding", "gift", "thoughtful"],
+        "tags": ["gift", "sensory", "soft", "thoughtful"],
         "in_stock": true
       },
       "optional_addon": {
-        "product_id": "P016",
-        "name_en": "Feeding Spoon Set",
-        "name_ar": "مجموعة ملاعق إطعام",
-        "price_aed": 29.0,
+        "product_id": "P014",
+        "name_en": "Soft Building Blocks",
+        "name_ar": "مكعبات ناعمة",
+        "price_aed": 99.0,
         "discount_percent": 10.0,
-        "original_total_aed": 174.0,
-        "discounted_total_aed": 156.6,
-        "savings_aed": 17.4
-      }
+        "original_total_aed": 188.0,
+        "discounted_total_aed": 169.2,
+        "savings_aed": 18.8
+      },
+      "reason_en": "Soft Sensory Baby Toy matches what children need at 6 months and supports practical daily use for families.",
+      "reason_ar": "لعبة حسية ناعمة مناسبة لهالمرحلة وتخدم احتياج يومي فعلي للأهل والطفل.",
+      "confidence": 0.9
     }
-  ]
+  ],
+  "validation": {
+    "budget_respected": true,
+    "age_respected": true,
+    "all_products_in_stock": true,
+    "no_hallucinated_product_ids": true,
+    "arabic_output_present": true,
+    "discount_math_correct": true
+  }
 }
 ```
 
@@ -123,6 +136,11 @@ python evals/run_evals.py
 - `needs_clarification`: missing key details trigger bilingual follow-up.
 - `no_valid_match`: no safe in-stock match under constraints.
 - `out_of_scope`: non baby/new-mom gifting requests rejected explicitly.
+
+## Loom Demo (3 Minutes)
+- Demo the Streamlit UI (`python -m streamlit run app/streamlit_app.py`), not only docs/evals.
+- Show 5 inputs: EN success, AR success, feeding success with add-on, impossible budget, and clarification case.
+- Point to one uncertainty path and one validation proof in UI badges/raw JSON.
 
 ## Tooling Transparency
 - ChatGPT/Codex used for architecture support, code drafting support, eval brainstorming, and documentation drafting.

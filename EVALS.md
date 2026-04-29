@@ -4,8 +4,8 @@ Total checks: 86
 Passed: 86  
 Failed: 0
 
-Known failure:  
-No automated check failures in the current suite. A practical limitation remains: Arabic copy can still sound slightly templated across similar products.
+Known limitation (honest):  
+Current evals are strong on hard safety constraints, but they do not fully measure subjective gift delight (for example, whether recommendations feel emotionally special to a shopper). A future rubric should add human rating for gift appeal and Arabic naturalness.
 
 ## Eval Philosophy
 This project measures hard constraints and failure modes, not style-only output quality.
