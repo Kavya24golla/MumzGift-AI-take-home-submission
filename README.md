@@ -1,45 +1,96 @@
 # MumzGift AI: Bilingual Gift Finder with Guardrailed Smart Offers
 
-MumzGift AI is a bilingual (English/Arabic) gift finder prototype for Mumzworld-style shopping journeys in the GCC. It converts messy gift intent into grounded recommendations from a synthetic catalog, then applies deterministic commerce guardrails before returning results.  
-MumzGift AI is not a generic gift chatbot. The LLM/rules handle messy EN/AR intent and short bilingual copy, while deterministic tools handle product retrieval, age checks, budget checks, stock checks, offer math, validation, and evals.
+**Walkthrough Video (Google Drive):** [3-minute demo](https://drive.google.com/file/d/1LRClD0P4i-5PthDf-dQwj7AX7VFl6FMi/view?usp=sharing)
 
-## Why This Problem Matters for Mumzworld
-Parents usually search by life situation, not SKU names. Queries like "gift for a 6-month-old under 200 AED" or "هدية لطفل عمره ٦ أشهر" need fast, safe, and relevant recommendations. This prototype targets that exact purchase-intent layer.
+## 1) What This Is
 
-## What The System Does
-- Extracts structured intent from EN/AR user text.
-- Retrieves candidates from a messy multilingual synthetic catalog.
-- Applies deterministic filters for budget, age suitability, and stock.
-- Ranks top recommendations and proposes one optional add-on (10% bundle discount).
-- Validates final output using schema and business-rule checks.
-- Handles uncertainty explicitly (`needs_clarification`, `no_valid_match`, `out_of_scope`).
+MumzGift AI is a bilingual (English/Arabic) gift-finding prototype for a Mumzworld-style GCC shopping flow.  
+It turns messy intent like “thoughtful toy gift for a 6-month-old under 200 AED” into grounded catalog recommendations, then enforces deterministic commerce guardrails before returning results.
 
-## Architecture (Text Diagram)
+This is **not** a generic chatbot.  
+LLM/rules handle intent parsing + short EN/AR copy. Deterministic code handles retrieval, filtering, ranking, bundle math, validation, and uncertainty routing.
+
+---
+
+## 2) Problem Statement
+
+Parents usually shop by situation, not SKU:
+- “Gift for a 6-month-old under 200 AED”
+- “I want to gift a 3-year-old who likes dolls”
+- “أريد هدية لطفل عمره ٦ أشهر”
+
+A naive LLM assistant can hallucinate products, ignore age/budget/stock, and output weak bundles.  
+MumzGift AI solves this with **semantic retrieval + deterministic guardrails + explicit evals**.
+
+---
+
+## 3) Why This Matters for Mumzworld
+
+A good gifting assistant can directly improve:
+- Product discovery
+- Conversion in high-intent gifting moments
+- Basket size with relevant add-ons
+- User trust through safe/grounded recommendations
+- Arabic shopping quality (native EN/AR response flow)
+
+---
+
+## 4) System Flow
+
 ```text
 User Query (EN/AR)
   -> Query Extractor
   -> Semantic Catalog Retrieval (local multilingual embeddings)
-  -> Deterministic Filter + Rank
-  -> Optional Offer Engine
-  -> Schema + Business Validation
+  -> Deterministic Filter + Rank (budget, age, stock, ID validity)
+  -> Semantic Bundle Matcher
+  -> Offer Engine (fixed 10% discount)
+  -> Schema + Business Validator
   -> Bilingual Response Writer
   -> Streamlit UI + Raw JSON + Eval Runner
 ```
 
-## Non-Trivial AI Engineering Components
-1. Tool-style workflow (extraction -> retrieval -> offer -> validator -> response writer)
-2. Retrieval over messy multilingual catalog data (EN/AR names, noisy tags, stock gaps)
-3. Structured output with validation (Pydantic + strict business rules)
-4. Evals beyond vibes (contract checks + full-suite safety + adversarial payload checks)
+---
 
-## Why Semantic Retrieval Instead of Keyword Matching
-Gift language is variable across English and Arabic ("3yrs baby likes dolls", "pretend play", "تحب الدمى"). Keyword-only matching is brittle and misses intent variants. Local multilingual embeddings retrieve semantically similar products first, while deterministic guardrails still enforce age, budget, stock, product ID validity, and discount correctness.
+## 5) Non-Trivial AI Engineering Components
 
-## Semantic Bundle Matching
-Instead of hand-writing every possible product pair, the system embeds product descriptions and assigns broad semantic groups such as `sensory_play`, `pretend_play`, `feeding_support`, and `bath_care`. Add-ons are selected only when semantic compatibility with the main product and user intent crosses a threshold. This avoids irrelevant bundles like sensory toy + bottle brush while still supporting varied user language.
+1. Tool-style modular workflow (not one prompt).
+2. Retrieval over messy multilingual catalog data.
+3. Structured output validation (Pydantic + business rules).
+4. Evals beyond vibes (contract checks + full-suite safety + adversarial checks).
 
-## Setup (Under 5 Minutes)
+---
+
+## 6) Why Semantic Retrieval (Not Keyword Matching)
+
+Gift language is highly variable:
+- “3yrs baby who likes dolls”
+- “toddler who enjoys pretend play”
+- “هدية لطفلة تحب الدمى”
+
+Keyword matching is brittle.  
+We use local multilingual embeddings for candidate retrieval, then deterministic logic decides what is allowed.
+
+---
+
+## 7) Semantic Bundle Matching (Why It’s Better)
+
+Instead of hard-coding endless pair rules, bundles are selected by:
+- Product semantic text embeddings
+- Semantic group alignment
+- Query alignment
+- Deterministic constraints (age/budget/stock/ID/math)
+
+If no relevant add-on passes threshold, the system returns:  
+`No suitable add-on found for this intent.`
+
+---
+
+## 8) Setup (Under 5 Minutes)
+
 ```bash
+git clone https://github.com/Kavya24golla/MumzGift-AI-take-home-submission.git
+cd MumzGift-AI-take-home-submission
+
 python -m venv .venv
 ```
 
@@ -53,29 +104,28 @@ macOS/Linux:
 source .venv/bin/activate
 ```
 
-Install dependencies:
+Install + run:
 ```bash
 pip install -r requirements.txt
-```
-
-Run app:
-```bash
 python -m streamlit run app/streamlit_app.py
-```
-
-Run evals:
-```bash
 python evals/run_evals.py
 ```
 
-## Example Inputs
+---
+
+## 9) Example Inputs
+
 - `Thoughtful toy gift for a 6-month-old under 200 AED`
 - `أريد هدية لطفل عمره ٦ أشهر بحدود ٢٠٠ درهم`
 - `Useful feeding gift for a 9-month-old under 150 AED`
 - `Gift for newborn under 5 AED`
 - `Something nice for a baby`
+- `i want to gift a 3yrs baby who likes dolls`
 
-## Example Output (Success)
+---
+
+## 10) Example Output (Shortened)
+
 ```json
 {
   "status": "success",
@@ -85,9 +135,7 @@ python evals/run_evals.py
     "age_months": 6,
     "budget_aed": 200.0,
     "occasion": "gift",
-    "preferences": ["toys", "thoughtful"],
-    "assumptions": [],
-    "missing_fields": []
+    "preferences": ["toys", "thoughtful"]
   },
   "recommendations": [
     {
@@ -96,32 +144,20 @@ python evals/run_evals.py
         "name_en": "Soft Sensory Baby Toy",
         "name_ar": "لعبة حسية ناعمة",
         "category": "toys",
-        "price_aed": 89.0,
-        "age_min_months": 3,
-        "age_max_months": 12,
-        "tags": ["gift", "sensory", "soft", "thoughtful"],
-        "in_stock": true
+        "price_aed": 89.0
       },
       "optional_addon": {
         "product_id": "P014",
-        "name_en": "Soft Building Blocks",
-        "name_ar": "مكعبات ناعمة",
-        "price_aed": 99.0,
         "discount_percent": 10.0,
-        "original_total_aed": 188.0,
         "discounted_total_aed": 169.2,
-        "savings_aed": 18.8,
         "bundle_relevance": {
           "semantic_group_main": "sensory_play",
           "semantic_group_addon": "sensory_play",
-          "semantic_similarity": 0.74,
-          "query_alignment": 0.61,
-          "final_bundle_score": 0.70,
-          "reason": "Both products support sensory play and early-stage gifting intent."
+          "final_bundle_score": 0.70
         }
       },
-      "reason_en": "At 6 months, babies are actively discovering texture and sound — a soft sensory toy gives them something safe to mouth, squeeze, and explore during this exact developmental window.",
-      "reason_ar": "في عمر ٦ أشهر، الطفل يبدأ يكتشف الملمس والأصوات بشكل فعلي — اللعبة الحسية الناعمة تعطيه شيئاً آمناً يستكشفه ويعبّر فيه بيديه الصغيرة.",
+      "reason_en": "At 6 months, babies are actively discovering texture and sound, and this soft sensory toy gives safe hands-on exploration right now.",
+      "reason_ar": "في عمر ٦ أشهر، الطفل يبدأ يكتشف الملمس والأصوات بشكل فعلي، واللعبة الحسية الناعمة تعطيه تجربة آمنة وممتعة.",
       "confidence": 0.9
     }
   ],
@@ -137,124 +173,96 @@ python evals/run_evals.py
 }
 ```
 
-## Before / After Bundle Quality
-- Query: `i want to gift a 3yrs baby who likes dolls`
-  - Before: Doll mains + weak add-ons (`Baby Socks`, `Sippy Cup`, `Snack Cup`) and generic sensory reasons.
-  - After: Doll mains + pretend-play relevant add-ons (for example `Mini Doll Blanket`, `Pretend Play Story Book`) with bundle relevance scoring.
-- Query: `Gift for a 6-month-old baby under 200 AED`
-  - Before: Could return weak utility add-ons due simple category rules.
-  - After: Add-ons selected by semantic compatibility and intent alignment, or omitted with `No suitable add-on found for this intent.`
-- Query: `Useful feeding gift for a 9-month-old under 150 AED`
-  - Before: Category-only matching could drift.
-  - After: Feeding products pair with feeding-support add-ons via semantic group + threshold checks.
+---
 
-## Eval Summary
-- Test cases: 15
-- Required-check overall: 86/86
-- Full-suite safety overall: 91/91
-- Adversarial checks: 4/4
-- Known automated check failures: none
+## 11) Evaluation Summary
 
-## Uncertainty Handling
-- `needs_clarification`: missing key details trigger bilingual follow-up.
-- `no_valid_match`: no safe in-stock match under constraints.
-- `out_of_scope`: non baby/new-mom gifting requests rejected explicitly.
+Latest run:
+- Test cases: **17**
+- Required-check score: **106/106**
+- Full-suite safety score: **123/123**
+- Adversarial checks: **4/4**
 
-## Loom Demo (3 Minutes)
-- Demo the Streamlit UI (`python -m streamlit run app/streamlit_app.py`), not only docs/evals.
-- Show 5 inputs: EN success, AR success, feeding success with add-on, impossible budget, and clarification case.
-- Point to one uncertainty path and one validation proof in UI badges/raw JSON.
+Coverage includes:
+- Over-budget prevention
+- Age mismatch prevention
+- Out-of-stock exclusion
+- Hallucinated ID detection
+- Arabic output presence
+- Discount math correctness
+- Semantic bundle relevance
+- Uncertainty routing correctness
 
-## Tooling Transparency
+**Honest limitation:** automated evals verify safety and grounding well, but they do not fully score subjective “gift delight” or nuanced Arabic style quality.
 
-Models and harnesses used:
+---
 
-- Claude Sonnet (claude.ai): prompt iteration for the query 
-  extractor and bilingual response writer. Used for architecture 
-  planning and README drafting.
+## 12) Uncertainty Handling
 
-- GPT-4o (ChatGPT): eval case brainstorming, adversarial test 
-  input generation, code review suggestions.
+Supported statuses:
+- `success`
+- `needs_clarification`
+- `no_valid_match`
+- `out_of_scope`
 
-- Cursor/KiloCode: code generation and refactoring across 
-  response_writer.py, bundle_engine.py, and catalog_search.py. 
-  Used in agent loop mode for multi-file edits.
+Examples:
+- `Something nice for a baby` -> asks clarification (missing age/budget).
+- `Gift for newborn under 5 AED` -> `no_valid_match` (no safe fit).
+- `Gift for my husband under 200 AED` -> `out_of_scope`.
 
-- Python + Pydantic: all deterministic validation. 
-  No LLM involved in guardrail logic.
+---
 
-How I used them:
-Pair-coding for implementation. One-shot generation for boilerplate. 
-Prompt iteration for the Arabic copywriting instructions — took 
-4 rounds to eliminate translated-English patterns.
+## 13) Tradeoffs
 
-Where I overruled the AI:
-The LLM initially suggested letting the model rank and select 
-products directly. I overruled this entirely — product selection, 
-age checks, budget checks, stock checks, ID validation, discount 
-math, and uncertainty routing are all deterministic. The LLM 
-only extracts intent and writes bilingual copy.
+Chosen because it is close to purchase intent and conversion.
 
-What did not work:
-Early Arabic prompts produced reasons that read like translated 
-English. Fixed by adding explicit Gulf Arabic dialect instructions 
-and banning specific templated phrases in the system prompt.
+Rejected:
+- Pediatric triage (too risky for 5-hour scope)
+- Ops dashboard (weaker customer-facing impact)
+- Review synthesizer (less direct to cart creation)
+- Product image -> PDP (hard to evaluate rigorously in scope)
+- Duplicate detector (strong technically, weaker shopper impact)
 
-## Why This Problem / Tradeoffs
+Design tradeoff:
+- LLM/rules only for intent + bilingual copy
+- Deterministic logic for product and commerce decisions
 
-Why I picked this problem:
-Gift intent sits directly at the purchase decision layer. 
-A good recommendation does not just answer a question — it 
-creates a cart. No other example on the brief connects user 
-intent to direct revenue as immediately as this one. 
-Mumzworld serves high-intent gifting moments (baby showers, 
-visits, milestones) where a fast, confident recommendation 
-drives conversion.
+---
 
-What I rejected:
-- Pediatric symptom triage: high-risk medical domain. 
-  Wrong outputs have real consequences. 5 hours is not 
-  enough to handle safely.
-- Operations dashboard: internally useful but weak 
-  customer-facing impact. Needs realistic order data 
-  I do not have.
-- Review synthesizer: useful but internal-only. 
-  No direct purchase connection.
-- Product image to PDP: interesting multimodal problem 
-  but output quality is hard to eval rigorously in 5 hours.
+## 14) Tooling Transparency
 
-Architecture choice:
-LLM handles only two things — messy intent extraction and 
-short bilingual copy. Everything else is deterministic. 
-This keeps the system auditable, testable, and safe from 
-hallucination at the product and price layer.
+Used:
+- Claude Sonnet + ChatGPT for architecture iteration, prompt iteration, eval brainstorming, and review suggestions
+- Cursor/KiloCode for assisted refactors and code drafting
+- Python + Pydantic for deterministic validation and guardrails
 
-What I cut:
-- Live Mumzworld catalog integration
-- Dynamic pricing and real-time stock
-- User history and personalisation
-- Fine-tuning for Arabic dialect variants
-- Payment or cart API integration
+Where AI was overruled:
+- Product selection remains deterministic
+- Age/budget/stock checks deterministic
+- ID validation deterministic
+- Discount math deterministic
+- Uncertainty routing deterministic
 
-What I would build next:
-- Real catalog API integration
-- Per-country GCC preference tuning (KSA vs UAE vs Kuwait)
-- A/B testing bundle offer conversion
-- Human review dashboard for failed or low-confidence queries
-- Stronger Arabic dialect coverage beyond Gulf MSA
+---
 
-## Known Limitations
-- Synthetic catalog only (no live retail integration).
-- Rule-first parsing can miss some edge phrasing.
-- Arabic copy is written fresh per product, not translated from 
-  English. Feminine/masculine gender agreement and Gulf dialect 
-  phrasing are enforced at the prompt level. Deep dialect 
-  personalisation per GCC country (KSA vs UAE vs Kuwait) 
-  remains a future improvement.
-- Ranking is intentionally simple and explainable.
+## 15) What I’d Build Next
 
-## What I Would Build Next
-- Wider Arabic dialect robustness and stronger paraphrase coverage.
-- Richer intent tests and error taxonomy.
-- Explainable score breakdown in the UI.
-- Scalable indexed retrieval for larger catalogs.
+- Live catalog API integration
+- Country-aware GCC personalization (KSA/UAE/Kuwait)
+- A/B tests for bundle conversion lift
+- Human review queue for low-confidence/failed cases
+- Stronger Arabic dialect coverage at scale
+
+---
+
+## 16) Time Log (~5 Hours)
+
+- Problem framing + scope: ~45 min
+- Synthetic catalog + eval design: ~60 min
+- Core retrieval/filter/rank/validation pipeline: ~90 min
+- Streamlit + bundle logic: ~75 min
+- Evals/docs/demo prep: ~60 min
+
+---
+
+MumzGift AI is built as a **testable AI system**, not a prompt demo: semantic understanding where it helps, deterministic guardrails where trust and correctness matter.
