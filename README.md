@@ -78,7 +78,7 @@ python evals/run_evals.py
   "status": "success",
   "query_understanding": {
     "language": "en",
-    "recipient": "newborn_baby",
+    "recipient": "infant",
     "age_months": 6,
     "budget_aed": 200.0,
     "occasion": "gift",
@@ -109,8 +109,8 @@ python evals/run_evals.py
         "discounted_total_aed": 169.2,
         "savings_aed": 18.8
       },
-      "reason_en": "Soft Sensory Baby Toy matches what children need at 6 months and supports practical daily use for families.",
-      "reason_ar": "لعبة حسية ناعمة مناسبة لهالمرحلة وتخدم احتياج يومي فعلي للأهل والطفل.",
+      "reason_en": "Soft Sensory Baby Toy is a strong gift for a 6-month-old because it supports sensory exploration, is soft for early play, and stays within the 200 AED budget.",
+      "reason_ar": "اللعبة الحسية الناعمة مناسبة لطفل بعمر ٦ أشهر لأنها تدعم الاستكشاف الحسي واللعب الآمن، وتبقى ضمن ميزانية ٢٠٠ درهم.",
       "confidence": 0.9
     }
   ],

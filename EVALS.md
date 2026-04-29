@@ -6,6 +6,7 @@ Failed: 0
 
 Known limitation (honest):  
 Current evals are strong on hard safety constraints, but they do not fully measure subjective gift delight (for example, whether recommendations feel emotionally special to a shopper). A future rubric should add human rating for gift appeal and Arabic naturalness.
+Additional honest limitation: the current automated suite does not grade emotional resonance quality of bilingual copy.
 
 ## Eval Philosophy
 This project measures hard constraints and failure modes, not style-only output quality.
