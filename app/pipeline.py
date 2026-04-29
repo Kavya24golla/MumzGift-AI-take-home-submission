@@ -11,6 +11,7 @@ from app.offer_engine import build_offer_for_main
 from app.query_extractor import extract_query_understanding
 from app.response_writer import generate_reasons_for_products
 from app.semantic_search import SemanticProductSearch
+from app.semantic_bundle import BUNDLE_SCORE_THRESHOLD
 from app.schemas import (
     FinalResponse,
     OptionalAddon,
@@ -114,7 +115,10 @@ def _score_product(product: Product, query_understanding: QueryUnderstanding, ca
 
 
 def _build_validation_flags(
-    recommendations: List[Recommendation], query_understanding: QueryUnderstanding, catalog_by_id: Dict[str, Product]
+    recommendations: List[Recommendation],
+    query_understanding: QueryUnderstanding,
+    catalog_by_id: Dict[str, Product],
+    main_recommendation_ids: set[str],
 ) -> ValidationResult:
     budget = query_understanding.budget_aed
     age = query_understanding.age_months
@@ -125,6 +129,7 @@ def _build_validation_flags(
     ids_ok = True
     ar_ok = True
     discount_ok = True
+    bundle_relevance_ok = True
 
     for rec in recommendations:
         main = rec.main_product
@@ -148,6 +153,19 @@ def _build_validation_flags(
             else:
                 if not catalog_by_id[addon.product_id].in_stock:
                     stock_ok = False
+                if query_understanding.age_months is not None and not (
+                    catalog_by_id[addon.product_id].age_min_months
+                    <= query_understanding.age_months
+                    <= catalog_by_id[addon.product_id].age_max_months
+                ):
+                    age_ok = False
+            if addon.product_id in main_recommendation_ids:
+                bundle_relevance_ok = False
+            if addon.bundle_relevance.final_bundle_score < BUNDLE_SCORE_THRESHOLD:
+                bundle_relevance_ok = False
+            same_group = addon.bundle_relevance.semantic_group_main == addon.bundle_relevance.semantic_group_addon
+            if not (addon.bundle_relevance.query_alignment > 0.15 or same_group):
+                bundle_relevance_ok = False
             expected_discounted = round(addon.original_total_aed * (1 - addon.discount_percent / 100), 2)
             if round(addon.discounted_total_aed, 2) != expected_discounted:
                 discount_ok = False
@@ -159,6 +177,7 @@ def _build_validation_flags(
         no_hallucinated_product_ids=ids_ok,
         arabic_output_present=ar_ok,
         discount_math_correct=discount_ok,
+        bundle_relevance=bundle_relevance_ok,
     )
 
 
@@ -285,10 +304,19 @@ def run_pipeline(query: str) -> dict:
     top = ranked[:MAX_RECOMMENDATIONS]
     generated_reasons = generate_reasons_for_products(top, understanding)
     used_addon_ids: set[str] = set()
+    top_main_ids = {product.product_id for product in top}
 
     recommendations: List[Recommendation] = []
     for rank, main in enumerate(top):
-        addon, _offer_reason = build_offer_for_main(main, catalog, understanding.budget_aed, used_addon_ids)
+        addon, _offer_reason = build_offer_for_main(
+            main_product=main,
+            catalog=catalog,
+            query_understanding=understanding,
+            budget_aed=understanding.budget_aed,
+            used_addon_ids=used_addon_ids,
+            raw_query=query,
+            exclude_product_ids=top_main_ids,
+        )
         reasons = generated_reasons[rank] if rank < len(generated_reasons) else {
             "reason_en": "Unable to generate reason.",
             "reason_ar": "تعذّر إنشاء السبب.",
@@ -303,7 +331,8 @@ def run_pipeline(query: str) -> dict:
         )
         recommendations.append(rec)
 
-    validation = _build_validation_flags(recommendations, understanding, catalog_by_id)
+    recommended_main_ids = {rec.main_product.product_id for rec in recommendations}
+    validation = _build_validation_flags(recommendations, understanding, catalog_by_id, recommended_main_ids)
     response = FinalResponse(
         status="success",
         query_understanding=understanding,

@@ -85,12 +85,31 @@ def _render_recommendations(response: Dict[str, Any]) -> None:
                     f"Discounted total: `{addon.get('discounted_total_aed', '-')}` AED | "
                     f"Savings: `{addon.get('savings_aed', '-')}` AED"
                 )
+                bundle_relevance = addon.get("bundle_relevance", {}) or {}
+                if bundle_relevance:
+                    bundle_reason = str(bundle_relevance.get("reason", "")).strip()
+                    if bundle_reason:
+                        bundle_reason = bundle_reason[0].lower() + bundle_reason[1:]
+                    st.write(
+                        f"Bundle relevance: {bundle_relevance.get('final_bundle_score', '-')} - {bundle_reason}"
+                    )
+                    st.write(
+                        f"Semantic groups: main=`{bundle_relevance.get('semantic_group_main', '-')}`, "
+                        f"add-on=`{bundle_relevance.get('semantic_group_addon', '-')}` | "
+                        f"semantic=`{bundle_relevance.get('semantic_similarity', '-')}` | "
+                        f"query alignment=`{bundle_relevance.get('query_alignment', '-')}`"
+                    )
             else:
                 try:
                     main_product_model = Product(**main)
-                    _addon_candidate, offer_reason = build_offer_for_main(main_product_model, catalog_products, budget_aed)
+                    _addon_candidate, offer_reason = build_offer_for_main(
+                        main_product=main_product_model,
+                        catalog=catalog_products,
+                        query_understanding=response.get("query_understanding", {}),
+                        budget_aed=budget_aed,
+                    )
                 except Exception:
-                    offer_reason = "No compatible add-on found"
+                    offer_reason = "No suitable add-on found for this intent."
                 st.caption(offer_reason)
 
 

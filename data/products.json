@@ -911,5 +911,49 @@
     "age_max_months": 48,
     "tags": ["soft_toy", "doll", "gift", "comfort"],
     "in_stock": true
+  },
+  {
+    "product_id": "P084",
+    "name_en": "Doll Accessories Set",
+    "name_ar": "مجموعة إكسسوارات دمى",
+    "category": "toys",
+    "price_aed": 59,
+    "age_min_months": 24,
+    "age_max_months": 72,
+    "tags": ["doll_accessory", "pretend_play", "gift", "toys"],
+    "in_stock": true
+  },
+  {
+    "product_id": "P085",
+    "name_en": "Toy Storage Basket",
+    "name_ar": "سلة تخزين ألعاب",
+    "category": "toys",
+    "price_aed": 79,
+    "age_min_months": 18,
+    "age_max_months": 72,
+    "tags": ["toy_storage", "pretend_play", "gift", "toys"],
+    "in_stock": true
+  },
+  {
+    "product_id": "P086",
+    "name_en": "Pretend Play Story Book",
+    "name_ar": "كتاب قصص للعب التخيلي",
+    "category": "toys",
+    "price_aed": 45,
+    "age_min_months": 24,
+    "age_max_months": 72,
+    "tags": ["story_book", "pretend_play", "gift", "toys"],
+    "in_stock": true
+  },
+  {
+    "product_id": "P087",
+    "name_en": "Mini Doll Blanket",
+    "name_ar": "بطانية صغيرة للدمى",
+    "category": "toys",
+    "price_aed": 39,
+    "age_min_months": 24,
+    "age_max_months": 72,
+    "tags": ["doll_accessory", "soft_toy", "gift", "pretend_play"],
+    "in_stock": true
   }
 ]

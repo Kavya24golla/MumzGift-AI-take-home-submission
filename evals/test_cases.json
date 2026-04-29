@@ -45,7 +45,8 @@
       "stock_respected",
       "budget_respected",
       "category_relevant",
-      "does_not_force_recommendation"
+      "does_not_force_recommendation",
+      "bundle_relevance"
     ]
   },
   {
@@ -195,6 +196,7 @@
     "expected_age_months": 36,
     "preferred_categories": ["toys"],
     "expected_semantic_concepts": ["doll", "dolls", "pretend_play", "toy", "role_play"],
+    "expected_reason_keywords": ["pretend play", "role-play", "storytelling", "dolls"],
     "required_checks": [
       "status_correct",
       "language_correct",
@@ -202,7 +204,9 @@
       "stock_respected",
       "no_hallucinated_product_ids",
       "category_relevant",
-      "semantic_relevance"
+      "semantic_relevance",
+      "reason_relevance",
+      "bundle_relevance"
     ]
   },
   {
@@ -218,7 +222,8 @@
       "stock_respected",
       "no_hallucinated_product_ids",
       "category_relevant",
-      "semantic_relevance"
+      "semantic_relevance",
+      "bundle_relevance"
     ]
   },
   {
@@ -234,7 +239,47 @@
       "stock_respected",
       "no_hallucinated_product_ids",
       "category_relevant",
-      "semantic_relevance"
+      "semantic_relevance",
+      "bundle_relevance"
+    ]
+  },
+  {
+    "id": "TC16_semantic_feeding_bundle_en",
+    "query": "Useful feeding gift for a 9-month-old under 150 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 9,
+    "preferred_categories": ["feeding"],
+    "expected_semantic_concepts": ["feeding", "spoon", "bottle", "weaning"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "age_respected",
+      "category_relevant",
+      "semantic_relevance",
+      "bundle_relevance",
+      "stock_respected"
+    ]
+  },
+  {
+    "id": "TC17_semantic_sensory_bundle_en",
+    "query": "Thoughtful toy gift for a 6-month-old under 200 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 6,
+    "expected_semantic_concepts": ["sensory", "toy", "teething", "soft"],
+    "expected_semantic_groups": ["sensory_play", "books_learning"],
+    "disallowed_semantic_groups": ["pretend_play"],
+    "min_query_alignment": 0.0,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "age_respected",
+      "semantic_relevance",
+      "bundle_relevance",
+      "semantic_bundle_quality",
+      "stock_respected",
+      "budget_respected"
     ]
   }
 ]

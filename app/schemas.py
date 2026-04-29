@@ -58,6 +58,17 @@ class Product(BaseModel):
         return self
 
 
+class BundleRelevance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    semantic_group_main: str
+    semantic_group_addon: str
+    semantic_similarity: float = Field(ge=0, le=1)
+    query_alignment: float = Field(ge=0, le=1)
+    final_bundle_score: float = Field(ge=0, le=1)
+    reason: str
+
+
 class OptionalAddon(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -69,6 +80,7 @@ class OptionalAddon(BaseModel):
     original_total_aed: float = Field(gt=0)
     discounted_total_aed: float = Field(gt=0)
     savings_aed: float = Field(ge=0)
+    bundle_relevance: BundleRelevance
 
     @model_validator(mode="after")
     def validate_discount_math(self) -> "OptionalAddon":
@@ -108,6 +120,8 @@ class ValidationResult(BaseModel):
     no_hallucinated_product_ids: bool
     arabic_output_present: bool
     discount_math_correct: bool
+    bundle_relevance: bool
+
 
 
 class FinalResponse(BaseModel):
@@ -157,6 +171,7 @@ def validate_final_response_business_rules(
     query = response.query_understanding
     if query is None or query.budget_aed is None:
         raise ValueError("Success responses must include budget_aed")
+    main_recommendation_ids = {rec.main_product.product_id for rec in response.recommendations}
 
     for rec in response.recommendations:
         main = rec.main_product
@@ -180,9 +195,15 @@ def validate_final_response_business_rules(
         if addon is not None:
             if addon.product_id not in catalog_by_id:
                 raise ValueError(f"Hallucinated add-on product_id: {addon.product_id}")
+            if addon.product_id in main_recommendation_ids:
+                raise ValueError("Add-on must not duplicate a main recommendation")
             source_addon = catalog_by_id[addon.product_id]
             if not source_addon.in_stock:
                 raise ValueError(f"Out-of-stock add-on: {addon.product_id}")
+            if query.age_months is not None and not (
+                source_addon.age_min_months <= query.age_months <= source_addon.age_max_months
+            ):
+                raise ValueError(f"Age mismatch for add-on: {addon.product_id}")
 
             expected_original = round(main.price_aed + addon.price_aed, 2)
             expected_discounted = round(expected_original * 0.9, 2)
@@ -196,5 +217,10 @@ def validate_final_response_business_rules(
                 raise ValueError("discount math is wrong: savings_aed is invalid")
             if addon.discounted_total_aed > query.budget_aed:
                 raise ValueError("Add-on offer is not safe: discounted total exceeds budget")
+            same_group = addon.bundle_relevance.semantic_group_main == addon.bundle_relevance.semantic_group_addon
+            if addon.bundle_relevance.final_bundle_score < 0.45:
+                raise ValueError("Add-on offer failed semantic relevance threshold")
+            if not (addon.bundle_relevance.query_alignment > 0.15 or same_group):
+                raise ValueError("Add-on offer has low query alignment without semantic-group match")
 
     return response

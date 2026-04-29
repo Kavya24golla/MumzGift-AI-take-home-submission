@@ -175,11 +175,11 @@ def extract_query_understanding(query: str) -> QueryUnderstanding:
     preferences = extract_preferences(query, language)
 
     if age_months is not None:
-        if 0 <= age_months <= 11:
-            recipient = "newborn_baby"
-        elif 12 <= age_months <= 23:
+        if age_months <= 3:
+            recipient = "newborn"
+        elif 4 <= age_months <= 12:
             recipient = "infant"
-        elif 24 <= age_months <= 47:
+        elif 13 <= age_months <= 36:
             recipient = "toddler"
         else:
             recipient = "child"

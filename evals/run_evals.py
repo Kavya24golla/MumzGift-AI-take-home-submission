@@ -255,6 +255,72 @@ def check_semantic_relevance(
     return ok, f"semantic concept overlap hits={hits}"
 
 
+def check_reason_relevance(
+    case: Dict[str, Any], response: Dict[str, Any], _: Dict[str, Product]
+) -> Tuple[bool, str]:
+    keywords = [str(item).lower() for item in case.get("expected_reason_keywords", [])]
+    if not keywords:
+        return True, "no reason-keyword constraints requested"
+
+    recs = _get_recommendations(response)
+    if not recs:
+        return False, "no recommendations returned"
+
+    for rec in recs:
+        reason_en = str(rec.get("reason_en", "")).lower()
+        if any(keyword in reason_en for keyword in keywords):
+            continue
+        return False, f"reason missing expected concepts: {keywords}"
+    return True, "reasons mention expected intent concepts"
+
+
+def check_bundle_relevance(
+    _: Dict[str, Any], response: Dict[str, Any], __: Dict[str, Product]
+) -> Tuple[bool, str]:
+    validation = response.get("validation") or {}
+    value = validation.get("bundle_relevance")
+    if value is None:
+        return False, "bundle_relevance missing in validation block"
+    return bool(value), "bundle relevance validation passed"
+
+
+def check_semantic_bundle_quality(
+    case: Dict[str, Any], response: Dict[str, Any], _: Dict[str, Product]
+) -> Tuple[bool, str]:
+    recs = _get_recommendations(response)
+    if not recs:
+        return False, "no recommendations returned"
+
+    expected_groups = set(case.get("expected_semantic_groups", []))
+    disallowed_groups = set(case.get("disallowed_semantic_groups", []))
+    min_query_alignment = float(case.get("min_query_alignment", 0.0))
+    main_ids = {(rec.get("main_product") or {}).get("product_id") for rec in recs}
+    main_ids.discard(None)
+
+    for rec in recs:
+        addon = rec.get("optional_addon")
+        if not addon:
+            continue
+        addon_id = addon.get("product_id")
+        if addon_id in main_ids:
+            return False, f"circular bundle detected with add-on {addon_id}"
+
+        bundle = addon.get("bundle_relevance") or {}
+        main_group = bundle.get("semantic_group_main")
+        addon_group = bundle.get("semantic_group_addon")
+        query_alignment = float(bundle.get("query_alignment", 0.0))
+
+        if expected_groups:
+            if main_group not in expected_groups and addon_group not in expected_groups:
+                return False, f"unexpected semantic groups main={main_group}, addon={addon_group}"
+        if disallowed_groups and (main_group in disallowed_groups or addon_group in disallowed_groups):
+            return False, f"disallowed semantic group in bundle main={main_group}, addon={addon_group}"
+        if query_alignment <= min_query_alignment:
+            return False, f"query alignment too low ({query_alignment} <= {min_query_alignment})"
+
+    return True, "semantic bundle quality checks passed"
+
+
 def check_no_recommendations_for_non_success(
     _: Dict[str, Any], response: Dict[str, Any], __: Dict[str, Product]
 ) -> Tuple[bool, str]:
@@ -279,6 +345,9 @@ CHECK_HANDLERS: Dict[str, CheckFn] = {
     "does_not_force_recommendation": check_does_not_force_recommendation,
     "category_relevant": check_category_relevant,
     "semantic_relevance": check_semantic_relevance,
+    "reason_relevance": check_reason_relevance,
+    "bundle_relevance": check_bundle_relevance,
+    "semantic_bundle_quality": check_semantic_bundle_quality,
 }
 
 
@@ -308,6 +377,7 @@ FULL_SUITE_CHECKS: Dict[str, Tuple[CheckFn, Callable[[Dict[str, Any], Dict[str, 
     "discount_math_correct": (check_discount_math_correct, lambda _c, r: _has_any_addon(r)),
     "budget_respected": (check_budget_respected, _budget_available),
     "age_respected": (check_age_respected, _age_available),
+    "bundle_relevance": (check_bundle_relevance, lambda _c, r: _has_recommendations(r)),
     "no_recommendations_for_non_success": (check_no_recommendations_for_non_success, lambda _c, _r: True),
 }
 
@@ -350,6 +420,32 @@ def run_adversarial_checks(catalog: Dict[str, Product], test_cases: List[Dict[st
     if first_addon:
         first_addon["discounted_total_aed"] = round(float(first_addon["discounted_total_aed"]) + 2, 2)
         checks.append(("wrong discount math", wrong_discount_payload))
+
+    bottle_brush = catalog.get("P019")
+    sensory_toy = catalog.get("P001")
+    if bottle_brush is not None and sensory_toy is not None:
+        irrelevant_bundle_payload = copy.deepcopy(base)
+        irrelevant_bundle_payload["recommendations"][0]["main_product"] = sensory_toy.model_dump()
+        main = irrelevant_bundle_payload["recommendations"][0]["main_product"]
+        irrelevant_bundle_payload["recommendations"][0]["optional_addon"] = {
+            "product_id": bottle_brush.product_id,
+            "name_en": bottle_brush.name_en,
+            "name_ar": bottle_brush.name_ar,
+            "price_aed": bottle_brush.price_aed,
+            "discount_percent": 10.0,
+            "original_total_aed": round(float(main["price_aed"]) + float(bottle_brush.price_aed), 2),
+            "discounted_total_aed": round((float(main["price_aed"]) + float(bottle_brush.price_aed)) * 0.9, 2),
+            "savings_aed": round((float(main["price_aed"]) + float(bottle_brush.price_aed)) * 0.1, 2),
+            "bundle_relevance": {
+                "semantic_group_main": "sensory_play",
+                "semantic_group_addon": "feeding_support",
+                "semantic_similarity": 0.2,
+                "query_alignment": 0.1,
+                "final_bundle_score": 0.2,
+                "reason": "Forced irrelevant pair for adversarial validation.",
+            },
+        }
+        checks.append(("irrelevant semantic bundle (Soft Sensory Baby Toy + Bottle Brush)", irrelevant_bundle_payload))
 
     passed = 0
     total = len(checks)
@@ -433,6 +529,9 @@ def run_all_evals() -> int:
         "does_not_force_recommendation",
         "category_relevant",
         "semantic_relevance",
+        "reason_relevance",
+        "bundle_relevance",
+        "semantic_bundle_quality",
     ]
     labels = {
         "status_correct": "Status correct",
@@ -447,6 +546,9 @@ def run_all_evals() -> int:
         "does_not_force_recommendation": "Does not force recommendation",
         "category_relevant": "Category relevant",
         "semantic_relevance": "Semantic relevance",
+        "reason_relevance": "Reason relevance",
+        "bundle_relevance": "Bundle relevance",
+        "semantic_bundle_quality": "Semantic bundle quality",
     }
     for metric in required_order:
         p = required_counts[metric]["passed"]
@@ -463,6 +565,7 @@ def run_all_evals() -> int:
         "discount_math_correct",
         "budget_respected",
         "age_respected",
+        "bundle_relevance",
         "no_recommendations_for_non_success",
     ]
     full_labels = {
@@ -472,6 +575,7 @@ def run_all_evals() -> int:
         "discount_math_correct": "Discount math correct (when add-on exists)",
         "budget_respected": "Budget respected (when budget exists)",
         "age_respected": "Age respected (when age exists)",
+        "bundle_relevance": "Bundle relevance (when recommendations exist)",
         "no_recommendations_for_non_success": "No forced recommendations for non-success statuses",
     }
     for metric in full_order:
