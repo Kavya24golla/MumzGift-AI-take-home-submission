@@ -182,6 +182,7 @@ Latest run:
 - Required-check score: **106/106**
 - Full-suite safety score: **123/123**
 - Adversarial checks: **4/4**
+- All evals can be reproduced with: `python evals/run_evals.py`
 
 Coverage includes:
 - Over-budget prevention
