@@ -1,0 +1,240 @@
+[
+  {
+    "id": "TC01_over_budget_guardrail",
+    "query": "Gift for a 6-month-old baby under 100 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 6,
+    "max_main_product_price": 100,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "budget_respected",
+      "age_respected",
+      "stock_respected",
+      "no_hallucinated_product_ids"
+    ]
+  },
+  {
+    "id": "TC02_age_range_guardrail",
+    "query": "Gift for newborn under 200 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 0,
+    "max_main_product_price": 200,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "age_respected",
+      "budget_respected",
+      "stock_respected",
+      "no_hallucinated_product_ids"
+    ]
+  },
+  {
+    "id": "TC03_out_of_stock_exclusion",
+    "query": "Premium feeding gift for a 9-month-old under 350 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 9,
+    "max_main_product_price": 350,
+    "preferred_categories": ["feeding"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "stock_respected",
+      "budget_respected",
+      "category_relevant",
+      "does_not_force_recommendation"
+    ]
+  },
+  {
+    "id": "TC04_no_hallucinated_ids",
+    "query": "Thoughtful baby gift for 12-month-old under 220 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 12,
+    "max_main_product_price": 220,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "no_hallucinated_product_ids",
+      "budget_respected",
+      "age_respected",
+      "stock_respected"
+    ]
+  },
+  {
+    "id": "TC05_arabic_output_required",
+    "query": "Useful diaper gift for a 3-month-old under 120 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 3,
+    "max_main_product_price": 120,
+    "preferred_categories": ["diapers"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "category_relevant",
+      "arabic_output_present",
+      "budget_respected",
+      "stock_respected"
+    ]
+  },
+  {
+    "id": "TC06_discount_math_validation",
+    "query": "Gift for a 9-month-old under 180 AED with useful add-on",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 9,
+    "max_main_product_price": 180,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "discount_math_correct",
+      "budget_respected",
+      "age_respected",
+      "stock_respected"
+    ]
+  },
+  {
+    "id": "TC07_vague_query_clarification",
+    "query": "Something nice for a baby",
+    "expected_status": "needs_clarification",
+    "expected_language": "en",
+    "expected_missing_fields": ["age_months"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "asks_clarifying_question",
+      "does_not_force_recommendation"
+    ]
+  },
+  {
+    "id": "TC08_impossible_budget_arabic",
+    "query": "أريد هدية لمولود جديد أقل من ٥ دراهم",
+    "expected_status": "no_valid_match",
+    "expected_language": "ar",
+    "expected_age_months": 0,
+    "max_main_product_price": 5,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "does_not_force_recommendation",
+      "budget_respected"
+    ]
+  },
+  {
+    "id": "TC09_out_of_scope_query",
+    "query": "Gift for my husband under 200 AED",
+    "expected_status": "out_of_scope",
+    "expected_language": "en",
+    "max_main_product_price": 200,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "does_not_force_recommendation"
+    ]
+  },
+  {
+    "id": "TC10_arabic_query_handling",
+    "query": "أريد هدية لطفل عمره ٦ أشهر بحدود ٢٠٠ درهم",
+    "expected_status": "success",
+    "expected_language": "ar",
+    "expected_age_months": 6,
+    "max_main_product_price": 200,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "budget_respected",
+      "age_respected",
+      "stock_respected",
+      "arabic_output_present"
+    ]
+  },
+  {
+    "id": "TC11_arabic_category_relevance",
+    "query": "أريد هدية مفيدة للإطعام لطفل عمره ٩ أشهر بحدود ١٥٠ درهم",
+    "expected_status": "success",
+    "expected_language": "ar",
+    "expected_age_months": 9,
+    "max_main_product_price": 150,
+    "preferred_categories": ["feeding"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "category_relevant",
+      "budget_respected",
+      "age_respected",
+      "stock_respected"
+    ]
+  },
+  {
+    "id": "TC12_normal_success_case",
+    "query": "Thoughtful gift for a friend with a 6-month-old under 200 AED",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 6,
+    "max_main_product_price": 200,
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "budget_respected",
+      "age_respected",
+      "stock_respected",
+      "no_hallucinated_product_ids",
+      "arabic_output_present",
+      "discount_math_correct"
+    ]
+  },
+  {
+    "id": "TC13_semantic_doll_query_en",
+    "query": "i want to gift a 3yrs baby who likes dolls",
+    "expected_status": "success",
+    "expected_language": "en",
+    "expected_age_months": 36,
+    "preferred_categories": ["toys"],
+    "expected_semantic_concepts": ["doll", "dolls", "pretend_play", "toy", "role_play"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "age_respected",
+      "stock_respected",
+      "no_hallucinated_product_ids",
+      "category_relevant",
+      "semantic_relevance"
+    ]
+  },
+  {
+    "id": "TC14_semantic_pretend_play_en",
+    "query": "my niece loves pretend play, need a gift",
+    "expected_status": "success",
+    "expected_language": "en",
+    "preferred_categories": ["toys"],
+    "expected_semantic_concepts": ["pretend_play", "doll", "toy", "role_play"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "stock_respected",
+      "no_hallucinated_product_ids",
+      "category_relevant",
+      "semantic_relevance"
+    ]
+  },
+  {
+    "id": "TC15_semantic_doll_query_ar",
+    "query": "هدية لطفلة تحب الدمى واللعب التخيلي",
+    "expected_status": "success",
+    "expected_language": "ar",
+    "preferred_categories": ["toys"],
+    "expected_semantic_concepts": ["دمى", "الدمى", "pretend_play", "toy", "role_play"],
+    "required_checks": [
+      "status_correct",
+      "language_correct",
+      "stock_respected",
+      "no_hallucinated_product_ids",
+      "category_relevant",
+      "semantic_relevance"
+    ]
+  }
+]
